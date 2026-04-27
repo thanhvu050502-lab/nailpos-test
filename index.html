@@ -1661,7 +1661,7 @@ function useDemo() {
     { id: uid(), name:'Tặng cắt móng khi làm extension', type:'free_service', value:'Cắt tỉa móng', is_active:true },
   ];
 
-  bootApp().then(()=>{ addLogoutBtn(); showLogin(); });
+  bootApp().then(()=>{ addLogoutBtn(); showLogin(); applyLanguage(); });
 }
 
 function resetConnection() {
@@ -4864,6 +4864,7 @@ function toggleDarkMode(on) {
   if(on) { document.body.classList.add('dark-mode'); localStorage.setItem('np_dark_mode','1'); }
   else { document.body.classList.remove('dark-mode'); localStorage.removeItem('np_dark_mode'); }
   renderSettingsMenu();
+  applyLanguage();
 }
 
 function setLanguage(lang, btn) {
@@ -4887,54 +4888,297 @@ function setLanguage(lang, btn) {
   applyLanguage();
 }
 
-function applyLanguage() {
-  const lang = localStorage.getItem('np_language') || 'vi';
+function getCurrentLanguage() {
+  return localStorage.getItem('np_language') || 'vi';
+}
 
-  const enMap = {
-    'Đăng nhập': 'Login',
-    'chào mừng trở lại': 'welcome back',
-    'Tổng quan': 'Dashboard',
-    'Đơn hàng': 'Orders',
-    'Lịch hẹn': 'Appointments',
-    'Khách hàng': 'Customers',
-    'Cài đặt': 'Settings',
-    'Giao diện & Ngôn ngữ': 'Appearance & Language',
-    'Ngôn ngữ': 'Language',
-    'Đăng xuất': 'Logout',
-    'Hôm nay': 'Today',
-    'Tháng': 'Month',
-    'Tuần': 'Week',
-    'Ngày': 'Day',
-    'Tất cả': 'All',
-    'Chờ TT': 'Pending',
-    'Đã TT': 'Paid',
-    'Đã huỷ': 'Cancelled',
-    'Tìm đơn hàng...': 'Search orders...',
-    'Tìm khách hàng...': 'Search customers...'
-  };
+const UI_TRANSLATIONS = {
+  'chào mừng trở lại': 'welcome back',
+  'Đăng nhập': 'Login',
+  'Không có quyền truy cập': 'Access denied',
+  'Email này chưa được cấp quyền.': 'This email has not been granted access.',
+  'Đang xác thực...': 'Authenticating...',
+  'Chỉ tài khoản Google được mời mới có thể đăng nhập': 'Only invited Google accounts can sign in',
+  'Kết nối Supabase để bắt đầu.': 'Connect Supabase to get started.',
+  'Dữ liệu lưu cloud, dùng được trên mọi thiết bị.': 'Data is stored in the cloud and works on every device.',
+  'Dán vào đây và nhấn Kết nối': 'Paste it here and click Connect',
+  'Kết nối Supabase': 'Connect Supabase',
+  'Dùng thử không cần Supabase (dữ liệu mẫu)': 'Try without Supabase (demo data)',
+  'Đang offline — thao tác bị giới hạn': 'Offline — actions are limited',
+  'Huỷ': 'Cancel',
+  'Xác nhận': 'Confirm',
+  'Tổng quan': 'Dashboard',
+  'Đơn hàng': 'Orders',
+  'Lịch hẹn': 'Appointments',
+  'Khách hàng': 'Customers',
+  'Cài đặt': 'Settings',
+  'Thông tin app': 'App information',
+  'Tên, prefix đơn hàng, khách hàng': 'Name, order prefix, customer prefix',
+  'Ca làm việc': 'Work shifts',
+  'Quản lý ca, mở/đóng ca': 'Manage, open and close shifts',
+  'Phương thức thanh toán': 'Payment methods',
+  'Tiền mặt, ngân hàng, Momo...': 'Cash, bank, MoMo...',
+  'Danh mục dịch vụ': 'Service catalog',
+  'Các dịch vụ & sản phẩm': 'Services & products',
+  'Khuyến mãi': 'Promotions',
+  'Mã giảm giá, voucher': 'Discount codes, vouchers',
+  'Nhóm khách hàng': 'Customer groups',
+  'Phân loại khách, chiết khấu nhóm': 'Customer categories, group discounts',
+  'Nhắc lịch hẹn': 'Appointment reminders',
+  'Thông báo trước lịch hẹn': 'Notify before appointments',
+  'Tài khoản & phân quyền': 'Accounts & permissions',
+  'Quản lý nhân viên': 'Manage staff',
+  'Giao diện & Ngôn ngữ': 'Appearance & Language',
+  'Dark mode, ngôn ngữ hiển thị': 'Dark mode, display language',
+  'Dữ liệu & kết nối': 'Data & connection',
+  'Supabase, xuất backup': 'Supabase, export backup',
+  'Đăng xuất': 'Logout',
+  '7 ngày gần nhất': 'Last 7 days',
+  'Lịch hẹn hôm nay': "Today's appointments",
+  'Xem tất cả': 'View all',
+  'Dịch vụ bán chạy': 'Top services',
+  'Đơn hàng gần đây': 'Recent orders',
+  'Tìm đơn hàng...': 'Search orders...',
+  'Tìm khách hàng...': 'Search customers...',
+  'Hôm nay': 'Today',
+  'Hôm qua': 'Yesterday',
+  'Tuần này': 'This week',
+  'Tháng này': 'This month',
+  'Năm nay': 'This year',
+  'Tất cả': 'All',
+  'Chờ TT': 'Pending',
+  'Đã TT': 'Paid',
+  'Đã huỷ': 'Cancelled',
+  '7 ngày': '7 days',
+  'Tùy chọn': 'Custom',
+  'Tháng': 'Month',
+  'Tuần': 'Week',
+  'Ngày': 'Day',
+  'Bấm vào ô trống để đặt lịch nhanh': 'Tap an empty slot to quick book',
+  'Đơn hàng mới': 'New order',
+  'Tên, SĐT, hoặc walk-in...': 'Name, phone, or walk-in...',
+  'Số lượng khách': 'Number of guests',
+  'Group Order đang bật: mỗi dịch vụ': 'Group Order is on: each service',
+  'khách': 'guests',
+  'Dịch vụ / Sản phẩm': 'Services / Products',
+  'Giỏ hàng': 'Cart',
+  'Dịch vụ Khác — tự điền': 'Other service — custom entry',
+  'Tên dịch vụ...': 'Service name...',
+  'Giá (đ)': 'Price (VND)',
+  'Không áp dụng': 'Not applied',
+  'Ghi chú': 'Notes',
+  'Ghi chú thêm...': 'Additional notes...',
+  'Tạm tính': 'Subtotal',
+  'Giảm giá': 'Discount',
+  'Tổng cộng': 'Total',
+  'Đóng': 'Close',
+  'Lưu': 'Save',
+  'Thanh toán →': 'Pay →',
+  'Thanh toán': 'Payment',
+  'Tổng cần thanh toán': 'Amount due',
+  'Thanh toán chia nhỏ': 'Split payment',
+  'Tiền khách đưa': 'Cash received',
+  'Nhập số tiền...': 'Enter amount...',
+  'Tiền thối:': 'Change:',
+  'Thêm phương thức': 'Add method',
+  'Đã nhập:': 'Entered:',
+  'Còn lại:': 'Remaining:',
+  'Quay lại': 'Back',
+  'Đặt lịch hẹn': 'Book appointment',
+  'Tìm khách hoặc walk-in...': 'Search customer or walk-in...',
+  'Số điện thoại': 'Phone number',
+  'Giờ': 'Time',
+  'Dịch vụ': 'Service',
+  'Thêm dịch vụ...': 'Add service...',
+  'Trạng thái': 'Status',
+  'Đã lên lịch': 'Scheduled',
+  'Hoàn thành': 'Completed',
+  'Không đến': 'No-show',
+  'Yêu cầu đặc biệt...': 'Special requests...',
+  'Lưu lịch hẹn': 'Save appointment',
+  'Thêm khách hàng': 'Add customer',
+  'Tên': 'Name',
+  'Không có nhóm': 'No group',
+  'Sở thích màu, dị ứng...': 'Color preferences, allergies...',
+  'Hồ sơ khách hàng': 'Customer profile',
+  'Chi tiết đơn hàng': 'Order details',
+  'Thêm dịch vụ': 'Add service',
+  'Mã dịch vụ': 'Service code',
+  'Gợi ý mã': 'Suggest code',
+  'Sơn gel...': 'Gel polish...',
+  'Loại': 'Type',
+  'Đơn vị': 'Unit',
+  'Thêm khuyến mãi': 'Add promotion',
+  'Giảm cuối tuần...': 'Weekend discount...',
+  'Giảm theo %': 'Percentage discount',
+  'Giảm tiền cố định': 'Fixed discount',
+  'Tặng dịch vụ miễn phí': 'Free service gift',
+  'Giá trị (%)': 'Value (%)',
+  'Thêm phương thức thanh toán': 'Add payment method',
+  'Ngân hàng': 'Bank',
+  'Tiền mặt': 'Cash',
+  'Khác': 'Other',
+  'Số tài khoản': 'Account number',
+  'Chủ tài khoản': 'Account holder',
+  'Ảnh QR Code': 'QR Code image',
+  'Chọn ảnh QR': 'Choose QR image',
+  'Thêm nhóm khách hàng': 'Add customer group',
+  'Mã nhóm': 'Group code',
+  'Tên nhóm': 'Group name',
+  'Khách VIP...': 'VIP customers...',
+  'Loại giảm giá': 'Discount type',
+  'Giá trị': 'Value',
+  'Mời thành viên': 'Invite member',
+  'Nhập Gmail của người bạn muốn mời. Họ sẽ nhận email, đăng nhập bằng Google Account là dùng được ngay.': 'Enter the Gmail of the person you want to invite. They will receive an email and can sign in with Google immediately.',
+  'Tên hiển thị': 'Display name',
+  'Quyền truy cập': 'Access role',
+  'Chủ tiệm — toàn quyền': 'Owner — full access',
+  'Nhân viên — không xem Cài đặt': 'Staff — cannot view Settings',
+  'Gửi lời mời': 'Send invite',
+  'Chỉnh quyền thành viên': 'Edit member role',
+  'Xoá': 'Delete',
+  'Thêm tài khoản': 'Add account',
+  'Mã PIN (4 số)': 'PIN code (4 digits)',
+  'Xác nhận PIN': 'Confirm PIN',
+  'Quyền': 'Role',
+  'Chủ tiệm (toàn quyền)': 'Owner (full access)',
+  'Nhân viên (không vào Cài đặt)': 'Staff (cannot access Settings)',
+  'Đóng ca làm việc': 'Close work shift',
+  'Tiền mặt thực tế trong két': 'Actual cash in drawer',
+  'Nhập số tiền thực đếm...': 'Enter counted cash amount...',
+  'Ghi chú cuối ca': 'End-of-shift notes',
+  'Bàn giao, sự cố, tồn kho...': 'Handover, issues, inventory...',
+  'Xác nhận đóng ca': 'Confirm shift close',
+  'Huỷ đơn hàng': 'Cancel order',
+  'Đơn hàng sẽ chuyển sang trạng thái': 'Order will be changed to status',
+  'Không thể hoàn tác.': 'This cannot be undone.',
+  'Lý do huỷ': 'Cancellation reason',
+  'VD: Khách đổi ý, khách không đến...': 'Ex: Customer changed mind, customer no-show...',
+  'Xác nhận huỷ': 'Confirm cancellation',
+  'Hướng dẫn:': 'Instructions:',
+  'Mở Google Sheets': 'Open Google Sheets',
+  'Copy URL dán vào đây': 'Copy the URL here',
+  'Quét mã thanh toán': 'Scan payment QR',
+  'Thông tin chuyển khoản': 'Bank transfer information',
+  'Sau khi khách quét và chuyển khoản thành công, bấm xác nhận bên dưới': 'After the customer scans and transfers successfully, tap confirm below',
+  'Đã thanh toán': 'Paid',
+  'Mở ca làm việc': 'Open work shift',
+  'Chào buổi mới! Bạn có muốn mở ca làm việc ngay không?': 'Good day! Would you like to open a shift now?',
+  'Chọn ca': 'Select shift',
+  'Chọn ca mẫu': 'Select shift template',
+  'Giờ bắt đầu': 'Start time',
+  'Giờ kết thúc': 'End time',
+  'Nhân viên trực ca': 'Staff on duty',
+  'Thêm nhân viên...': 'Add staff...',
+  'Ghi chú đầu ca': 'Start-of-shift notes',
+  'Tồn quỹ, nhiệm vụ...': 'Cash float, tasks...',
+  'Bỏ qua': 'Skip',
+  'Mở ca': 'Open shift',
+  'Báo cáo ca': 'Shift report',
+  'Sao chép': 'Copy',
+  'Doanh thu': 'Revenue',
+  'Chờ thanh toán': 'Pending payment',
+  'đơn hàng': 'orders',
+  'đơn hoàn thành': 'completed orders',
+  'đã lưu hồ sơ': 'saved profiles',
+  'lịch': 'appointments',
+  'Không có lịch hẹn hôm nay': 'No appointments today',
+  'Chưa có dữ liệu': 'No data yet',
+  'Chưa có đơn hàng nào': 'No orders yet',
+  'Nhấn + để tạo đơn mới': 'Tap + to create a new order',
+  'Không có đơn hàng trong khoảng này': 'No orders in this range',
+  'Chờ thanh toán': 'Pending payment',
+  'Đã thanh toán': 'Paid',
+  'Đã huỷ': 'Cancelled',
+  'Đã lên lịch': 'Scheduled',
+  'Hoàn thành': 'Completed',
+  'Không đến': 'No-show',
+  'Chưa mở ca hôm nay': 'No shift opened today',
+  'đang mở': 'is open',
+  'Xem ca →': 'View shift →',
+  'Mở ca →': 'Open shift →',
+  'Xem →': 'View →',
+  'Đang bật': 'On',
+  'Đang tắt': 'Off',
+  'nhắc trước': 'remind before',
+  'phút': 'minutes',
+  'phương thức': 'methods',
+  'dịch vụ': 'services',
+  'nhóm': 'groups',
+  'khuyến mãi': 'promotions',
+  'lần': 'times',
+  'bộ': 'set',
+  'tự điền': 'custom entry',
+  'Tự điền tên + giá': 'Custom name + price',
+  'Không có phương thức. Thêm trong Cài đặt.': 'No payment method. Add one in Settings.',
+  'Vui lòng nhập URL và Key': 'Please enter URL and Key',
+  'Đang kết nối...': 'Connecting...',
+  'Kết nối thất bại:': 'Connection failed:',
+  'Đổi kết nối Supabase': 'Change Supabase connection',
+  'Trang sẽ reload để nhập kết nối mới.': 'The page will reload to enter a new connection.',
+  'Đã chọn Tiếng Việt': 'Vietnamese selected',
+  'Language set to English': 'Language set to English',
+  'Vui lòng chọn khách hàng': 'Please select a customer',
+  'Vui lòng chọn ít nhất 1 dịch vụ': 'Please select at least 1 service',
+  'Nhập tên dịch vụ': 'Enter service name',
+  'Xác nhận thanh toán ✓': 'Payment confirmed ✓',
+  'Cập nhật thành công': 'Updated successfully',
+  'Đơn từ lịch hẹn': 'Order from appointment'
+};
 
-  const viMap = Object.fromEntries(
-    Object.entries(enMap).map(([vi, en]) => [en, vi])
-  );
+function translateTextValue(value, map) {
+  if (!value || typeof value !== 'string') return value;
+  let out = value;
+  const entries = Object.entries(map).sort((a, b) => b[0].length - a[0].length);
+  for (const [from, to] of entries) {
+    if (!from || from === to) continue;
+    out = out.split(from).join(to);
+  }
+  return out;
+}
 
+function applyLanguage(root = document.body) {
+  const lang = getCurrentLanguage();
+  document.documentElement.lang = lang === 'en' ? 'en' : 'vi';
+
+  const enMap = UI_TRANSLATIONS;
+  const viMap = Object.fromEntries(Object.entries(enMap).map(([vi, en]) => [en, vi]));
   const map = lang === 'en' ? enMap : viMap;
 
-  document.querySelectorAll('body *').forEach(el => {
-    if (['SCRIPT', 'STYLE', 'SVG', 'PATH'].includes(el.tagName)) return;
-
-    el.childNodes.forEach(node => {
-      if (node.nodeType === Node.TEXT_NODE) {
-        const oldText = node.textContent.trim();
-        if (map[oldText]) {
-          node.textContent = node.textContent.replace(oldText, map[oldText]);
-        }
-      }
-    });
-
-    if (el.placeholder && map[el.placeholder]) {
-      el.placeholder = map[el.placeholder];
+  const skipTags = new Set(['SCRIPT', 'STYLE', 'SVG', 'PATH', 'IMG', 'VIDEO', 'CANVAS']);
+  const walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      const parent = node.parentElement;
+      if (!parent || skipTags.has(parent.tagName)) return NodeFilter.FILTER_REJECT;
+      if (parent.closest('[data-no-translate]')) return NodeFilter.FILTER_REJECT;
+      if (!node.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+      return NodeFilter.FILTER_ACCEPT;
     }
   });
+
+  const textNodes = [];
+  while (walk.nextNode()) textNodes.push(walk.currentNode);
+  textNodes.forEach(node => {
+    node.nodeValue = translateTextValue(node.nodeValue, map);
+  });
+
+  root.querySelectorAll?.('input, textarea, select, button, [title], [aria-label]').forEach(el => {
+    if (el.closest('[data-no-translate]')) return;
+    ['placeholder', 'title', 'aria-label'].forEach(attr => {
+      const val = el.getAttribute(attr);
+      if (val) el.setAttribute(attr, translateTextValue(val, map));
+    });
+  });
+}
+
+function startLanguageObserver() {
+  if (window.__npLangObserver) return;
+  let timer = null;
+  window.__npLangObserver = new MutationObserver(() => {
+    clearTimeout(timer);
+    timer = setTimeout(() => applyLanguage(), 30);
+  });
+  window.__npLangObserver.observe(document.body, { childList: true, subtree: true });
 }
 
 function loadSavedPreferences() {
@@ -4946,6 +5190,7 @@ function loadSavedPreferences() {
 // ════════════════════════════════════════
 window.addEventListener('DOMContentLoaded',()=>{
   loadSavedPreferences();
+  startLanguageObserver();
   const savedUrl = localStorage.getItem('np_sb_url') || "https://iobcbhilrwokmmfhzuyx.supabase.co";
   const savedKey = localStorage.getItem('np_sb_key') || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlvYmNiaGlscndva21tZmh6dXl4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2NTYxMzIsImV4cCI6MjA5MjIzMjEzMn0.ycS09PMEZ5nld3hPaogSq_UD2hENU3qJ_7uXtuN6fYI";
   initSupabase(savedUrl, savedKey);
