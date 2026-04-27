@@ -1760,6 +1760,7 @@ function goTo(name) {
   if(name==='custs') renderCustomersList();
   if(name==='settings') renderSettingsMenu();
   updateFab();
+  applyLanguage();
 }
 
 function updateFab() {
@@ -4352,6 +4353,7 @@ function openSettingPanel(panel) {
   }
 
   openModal('settingPanelModal');
+  applyLanguage();
 }
 
 function renderReminderSettingsPanel() {
@@ -4886,22 +4888,34 @@ function applyLanguage() {
 
   const map = {
     vi: {
-      login: 'Đăng nhập',
-      welcome: 'chào mừng trở lại',
-      customer: 'Khách hàng',
-      language: 'Ngôn ngữ'
+      'Đăng nhập': 'Đăng nhập',
+      'chào mừng trở lại': 'chào mừng trở lại',
+      'Tổng quan': 'Tổng quan',
+      'Đơn hàng': 'Đơn hàng',
+      'Lịch hẹn': 'Lịch hẹn',
+      'Khách hàng': 'Khách hàng',
+      'Cài đặt': 'Cài đặt',
+      'Giao diện & Ngôn ngữ': 'Giao diện & Ngôn ngữ',
+      'Ngôn ngữ': 'Ngôn ngữ',
+      'Đăng xuất': 'Đăng xuất'
     },
     en: {
-      login: 'Login',
-      welcome: 'welcome back',
-      customer: 'Customers',
-      language: 'Language'
+      'Đăng nhập': 'Login',
+      'chào mừng trở lại': 'welcome back',
+      'Tổng quan': 'Dashboard',
+      'Đơn hàng': 'Orders',
+      'Lịch hẹn': 'Appointments',
+      'Khách hàng': 'Customers',
+      'Cài đặt': 'Settings',
+      'Giao diện & Ngôn ngữ': 'Appearance & Language',
+      'Ngôn ngữ': 'Language',
+      'Đăng xuất': 'Logout'
     }
   };
 
-  document.querySelectorAll('[data-lang]').forEach(el => {
-    const key = el.getAttribute('data-lang');
-    el.textContent = map[lang][key] || el.textContent;
+  document.querySelectorAll('span, div, h3, button').forEach(el => {
+    const text = el.childNodes.length === 1 ? el.textContent.trim() : '';
+    if(map[lang][text]) el.textContent = map[lang][text];
   });
 }
 
