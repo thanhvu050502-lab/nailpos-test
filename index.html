@@ -4880,42 +4880,60 @@ function setLanguage(lang, btn) {
   toast(lang==='vi'?'Đã chọn Tiếng Việt':'Language set to English','success');
 
   renderSettingsMenu();
+  renderDashboard();
+  renderOrdersScreen();
+  renderCalendar();
+  renderCustomersList();
   applyLanguage();
 }
 
 function applyLanguage() {
   const lang = localStorage.getItem('np_language') || 'vi';
 
-  const map = {
-    vi: {
-      'Đăng nhập': 'Đăng nhập',
-      'chào mừng trở lại': 'chào mừng trở lại',
-      'Tổng quan': 'Tổng quan',
-      'Đơn hàng': 'Đơn hàng',
-      'Lịch hẹn': 'Lịch hẹn',
-      'Khách hàng': 'Khách hàng',
-      'Cài đặt': 'Cài đặt',
-      'Giao diện & Ngôn ngữ': 'Giao diện & Ngôn ngữ',
-      'Ngôn ngữ': 'Ngôn ngữ',
-      'Đăng xuất': 'Đăng xuất'
-    },
-    en: {
-      'Đăng nhập': 'Login',
-      'chào mừng trở lại': 'welcome back',
-      'Tổng quan': 'Dashboard',
-      'Đơn hàng': 'Orders',
-      'Lịch hẹn': 'Appointments',
-      'Khách hàng': 'Customers',
-      'Cài đặt': 'Settings',
-      'Giao diện & Ngôn ngữ': 'Appearance & Language',
-      'Ngôn ngữ': 'Language',
-      'Đăng xuất': 'Logout'
-    }
+  const enMap = {
+    'Đăng nhập': 'Login',
+    'chào mừng trở lại': 'welcome back',
+    'Tổng quan': 'Dashboard',
+    'Đơn hàng': 'Orders',
+    'Lịch hẹn': 'Appointments',
+    'Khách hàng': 'Customers',
+    'Cài đặt': 'Settings',
+    'Giao diện & Ngôn ngữ': 'Appearance & Language',
+    'Ngôn ngữ': 'Language',
+    'Đăng xuất': 'Logout',
+    'Hôm nay': 'Today',
+    'Tháng': 'Month',
+    'Tuần': 'Week',
+    'Ngày': 'Day',
+    'Tất cả': 'All',
+    'Chờ TT': 'Pending',
+    'Đã TT': 'Paid',
+    'Đã huỷ': 'Cancelled',
+    'Tìm đơn hàng...': 'Search orders...',
+    'Tìm khách hàng...': 'Search customers...'
   };
 
-  document.querySelectorAll('span, div, h3, button').forEach(el => {
-    const text = el.childNodes.length === 1 ? el.textContent.trim() : '';
-    if(map[lang][text]) el.textContent = map[lang][text];
+  const viMap = Object.fromEntries(
+    Object.entries(enMap).map(([vi, en]) => [en, vi])
+  );
+
+  const map = lang === 'en' ? enMap : viMap;
+
+  document.querySelectorAll('body *').forEach(el => {
+    if (['SCRIPT', 'STYLE', 'SVG', 'PATH'].includes(el.tagName)) return;
+
+    el.childNodes.forEach(node => {
+      if (node.nodeType === Node.TEXT_NODE) {
+        const oldText = node.textContent.trim();
+        if (map[oldText]) {
+          node.textContent = node.textContent.replace(oldText, map[oldText]);
+        }
+      }
+    });
+
+    if (el.placeholder && map[el.placeholder]) {
+      el.placeholder = map[el.placeholder];
+    }
   });
 }
 
