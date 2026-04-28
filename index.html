@@ -1619,10 +1619,16 @@ function useDemo() {
 
   // ── Orders (rich history) ──
   const svc = cache.catalog;
-  const mkOrder = (id, code, custId, custName, items, date, status, note='') => {
+const mkOrder = (id, code, custId, custName, items, date, status, note='') => {
     const total = items.reduce((s,i)=>s+i.price*i.quantity,0);
     const disc = status==='paid' && cache.customers.find(c=>c.id===custId)?.group_id==='g2' ? Math.round(total*0.1) : 0;
-    return { id, code, customer_id:custId, customer_name:custName, appointment_id:null, items: items.map(i=>({id:uid(),...i})), total_amount:total, discount:disc, final_amount:total-disc, payment_methods:[{method_id:'pm1',payment_method_name:'Tiền mặt',amount:total-disc}], status, notes:note, created_at:date };
+    const mappedItems = items.map(i=>({id:uid(),...i}));
+    return { id, code, customer_id:custId, customer_name:custName, appointment_id:null,
+      order_items: mappedItems, items: mappedItems,
+      payments:[{id:uid(),payment_method_id:'pm1',payment_method_name:'Tiền mặt',amount:total-disc}],
+      payment_methods:[{method_id:'pm1',payment_method_name:'Tiền mặt',amount:total-disc}],
+      total_amount:total, discount:disc, final_amount:total-disc,
+      status, notes:note, created_at:date };
   };
   cache.orders = [
     mkOrder('o1','ORD0012','c1','Hà My',[{catalog_id:svc[0].id,name:'Sơn gel',price:120000,quantity:1},{catalog_id:svc[2].id,name:'Vẽ nail nghệ thuật',price:180000,quantity:1}], today, 'paid'),
@@ -1828,7 +1834,7 @@ function renderDashboard() {
 
   const from = getFromDate();
   const allOrders = cache.orders || [];
-  const filtered = allOrders.filter(o=>o.created_at>=from&&o.status!=='cancelled');
+  const filtered = allOrders.filter(o=>(o.created_at||'').slice(0,10)>=from&&o.status!=='cancelled');
   const paid = filtered.filter(o=>o.status==='paid');
   const revenue = paid.reduce((s,o)=>s+o.final_amount,0);
   const pending = allOrders.filter(o=>o.status==='pending').length;
@@ -1837,7 +1843,7 @@ function renderDashboard() {
   // Pending badge
   const badge = document.getElementById('pendingBadge');
   if(pending>0){badge.textContent=pending;badge.classList.add('on');}else badge.classList.remove('on');
-  const todayOrders=allOrders.filter(o=>o.created_at>=todayStr()&&o.status==='paid');
+  const todayOrders=allOrders.filter(o=>(o.created_at||'').slice(0,10)>=todayStr()&&o.status==='paid');
   const todayRev=todayOrders.reduce((s,o)=>s+o.final_amount,0);
   const revBadge=document.getElementById('todayRevBadge');
   if(revBadge){if(todayRev>0){revBadge.style.display='block';revBadge.textContent=todayRev>=1e6?(todayRev/1e6).toFixed(1)+'tr':VND(todayRev).replace('đ','')+'đ';}else revBadge.style.display='none';}
@@ -1912,7 +1918,6 @@ function orderRowHtml(o) {
 }
 
 function yesterdayStr(){const d=new Date();d.setDate(d.getDate()-1);return d.toISOString().slice(0,10);}
-function fmtDate(d){if(!d)return'';const [y,m,dd]=d.split('-');return `${dd}/${m}/${y}`;}
 
 function renderOrdersScreen() {
   const filt=[{k:'all',l:'Tất cả'},{k:'pending',l:'Chờ TT'},{k:'paid',l:'Đã TT'},{k:'cancelled',l:'Đã huỷ'}];
@@ -2534,6 +2539,7 @@ function renderApptDay(){
   renderApptDayView();
 }
 function renderApptDayView(){
+  if(tlNowInterval){clearInterval(tlNowInterval);tlNowInterval=null;}
   const listEl=document.getElementById('apptDayList');
   const tlEl=document.getElementById('apptTimeline');
   const wkEl=document.getElementById('apptWeekView');
@@ -3968,7 +3974,7 @@ function renderCaScreen() {
     const now = new Date();
     const durMins = Math.round((now - openDT) / 60000);
     const durStr = durMins < 60 ? `${durMins} phút` : `${Math.floor(durMins/60)}h ${durMins%60}p`;
-    const orders = (cache.orders||[]).filter(o=>o.created_at>=active.date && o.status!=='cancelled');
+    const orders = (cache.orders||[]).filter(o=>(o.created_at||'').slice(0,10)>=active.date && o.status!=='cancelled');
     const revenue = orders.filter(o=>o.status==='paid').reduce((s,o)=>s+o.final_amount,0);
     const pending = orders.filter(o=>o.status==='pending').length;
 
@@ -4758,7 +4764,7 @@ function openShiftFromPopup() {
 // ════════════════════════════════════════
 function openCloseShiftModal() {
   const shift = getActiveShift(); if(!shift) return;
-  const orders = (cache.orders||[]).filter(o=>o.created_at>=shift.date && o.status==='paid');
+  const orders = (cache.orders||[]).filter(o=>(o.created_at||'').slice(0,10)>=shift.date && o.status==='paid');
   const allOrders = (cache.orders||[]).filter(o=>o.created_at>=shift.date && o.status!=='cancelled');
   const revenue = orders.reduce((s,o)=>s+o.final_amount,0);
 
@@ -4826,7 +4832,7 @@ function openCloseShiftModal() {
 
 async function confirmCloseShiftFromReport() {
   const shift = getActiveShift(); if(!shift) return;
-  const orders = (cache.orders||[]).filter(o=>o.created_at>=shift.date && o.status==='paid');
+  const orders = (cache.orders||[]).filter(o=>(o.created_at||'').slice(0,10)>=shift.date && o.status==='paid');
   const revenue = orders.reduce((s,o)=>s+o.final_amount,0);
   const actualCash = parseInt(document.getElementById('reportActualCash')?.value)||null;
   const note = document.getElementById('reportCloseNote')?.value.trim()||'';
@@ -4847,15 +4853,30 @@ async function confirmCloseShiftFromReport() {
 
 function copyShiftReport() {
   const shift = getActiveShift(); if(!shift) return;
-  const orders = (cache.orders||[]).filter(o=>o.created_at>=shift.date && o.status==='paid');
+  const orders = (cache.orders||[]).filter(o=>(o.created_at||'').slice(0,10)>=shift.date && o.status==='paid');
   const revenue = orders.reduce((s,o)=>s+o.final_amount,0);
   const tpl = getShiftTemplates().find(t=>t.id===shift.templateId)||{name:shift.typeLabel||'Ca'};
   const text = `📊 BÁO CÁO CA ${tpl.name.toUpperCase()}\n${fmtDate(shift.date)}\nMở: ${new Date(shift.openTime).toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'})}\nNhân viên: ${(shift.staff||[]).join(', ')||'—'}\n\nDoanh thu: ${VND(revenue)}\nSố đơn: ${orders.length}\n\nAnh.NailLab POS`;
   navigator.clipboard?.writeText(text).then(()=>toast('Đã sao chép báo cáo ✓','success')).catch(()=>toast('Không thể sao chép','error'));
 }
 
-// Keep old confirmCloseShift as alias
-async function confirmCloseShift() { await confirmCloseShiftFromReport(); }
+// confirmCloseShift used by closeShiftModal
+async function confirmCloseShift() {
+  const shift = getActiveShift(); if(!shift) return;
+  const orders = (cache.orders||[]).filter(o=>(o.created_at||'').slice(0,10)>=shift.date && o.status==='paid');
+  const revenue = orders.reduce((s,o)=>s+o.final_amount,0);
+  const actualCash = parseInt(document.getElementById('caActualCash')?.value)||null;
+  const note = document.getElementById('caCloseNote')?.value.trim()||'';
+  const closed = { ...shift, status:'closed', closeTime:new Date().toISOString(), closeNote:note, actualCash, revenue, orderCount:orders.length, orderIds:orders.map(o=>o.id) };
+  const shifts = getShifts();
+  const existing = shifts.findIndex(s=>s.id===shift.id);
+  if(existing>=0) shifts[existing]=closed; else shifts.unshift(closed);
+  saveShifts(shifts);
+  setActiveShift(null);
+  closeModal('closeShiftModal');
+  toast('Đã đóng ca thành công ✓','success');
+  renderDashboard(); updateCaBadge(); renderSettingsMenu();
+}
 
 // ════════════════════════════════════════
 // DARK MODE & LANGUAGE
